@@ -6,7 +6,7 @@ A simple, self-hostable fullstack library web application for **private/family u
 
 ## Implementation Status
 
-### ✅ **COMPLETED** (December 2024)
+### ✅ **COMPLETED** (June 2025)
 
 #### Frontend Foundation & UI Components
 
