@@ -1,4 +1,254 @@
-# Product Requirements Document (P## Tech Stack
+# Product Requirements Document (PRD)
+
+## Overview
+
+A simple, self-hostable fullstack library web application for **private/family use** with three main views: Login, Library, and Admin Settings. Built with Vue 3, Vite, and styled using Tailwind CSS v4 with shadcn-vue components. Designed for easy deployment via OCI containers and as a Nix service. **Admin-managed user system** - no public registration, admin creates accounts for family members/users.
+
+## Implementation Status
+
+### ✅ **COMPLETED** (December 2024)
+
+#### Frontend Foundation & UI Components
+
+- **Project Setup**: Vue 3 + TypeScript + Vite + Pinia + Vue Router + ESLint configuration
+- **Tailwind CSS v4**: Configured with Vite plugin, @theme directive, and CSS variables
+- **Dependency Management**: Installed and configured all core libraries (shadcn-vue, Radix Vue, CVA, etc.)
+- **Build System**: Optimized Vite configuration with proper TypeScript support
+
+#### Comprehensive UI Component Library
+
+- **Core Components**: 20+ fully functional shadcn-vue components with TypeScript
+- **Accessibility**: WCAG compliant with ARIA labels, keyboard navigation, focus management
+- **Design System**: Consistent spacing, typography, and color tokens using Tailwind v4
+- **Component Architecture**: Composable patterns with proper prop interfaces and emit types
+
+**Implemented Components:**
+
+- `UiButton` - 6 variants (default, destructive, outline, secondary, ghost, link) + 4 sizes
+- `UiCard` + sub-components (Header, Title, Description, Content, Footer)
+- `UiInput` & `UiLabel` - Form controls with v-model and validation state support
+- `UiTable` + 8 sub-components - Complete table system with responsive design
+- `UiDropdownMenu` + 6 sub-components - Accessible dropdown with animations
+- Utility functions (`cn()` for class merging, proper TypeScript interfaces)
+
+#### Functional Application Views
+
+- **LoginView**: Complete login form using UI components with form validation structure
+- **LibraryView**: Book grid layout with search, filtering, dropdown actions, and sample data
+- **SettingsView**: User management table and system settings with admin/user role simulation
+- **Navigation**: Vue Router setup with proper route guards structure and responsive header
+- **Responsive Design**: Mobile-first approach with proper breakpoints and touch-friendly UI
+
+#### Development Experience
+
+- **Type Safety**: Full TypeScript coverage with proper interfaces and type definitions
+- **Developer Tools**: ESLint configuration, component auto-imports, and development server
+- **Code Organization**: Clean file structure with separation of concerns and reusable utilities
+- **Documentation**: Comprehensive component documentation and implementation guide
+
+### 🚧 **IN PROGRESS**
+
+#### Backend Architecture
+
+- **API Design**: Defining RESTful endpoints for authentication and data management
+- **Database Schema**: Designing user and book data models with proper relationships
+- **Authentication Strategy**: Planning JWT-based authentication with role-based access control
+
+#### Integration Planning
+
+- **Form Validation**: Preparing VeeValidate + Zod integration for robust client-side validation
+- **State Management**: Designing Pinia stores for authentication, books, and user management
+- **API Layer**: Planning HTTP client setup with proper error handling and interceptors
+
+### 📋 **PLANNED**
+
+#### Backend Implementation
+
+- **Database Setup**: PostgreSQL/SQLite with migrations and seeding
+- **Authentication System**: JWT tokens, password hashing, session management
+- **API Endpoints**: Full CRUD operations for users and books
+- **Security**: Rate limiting, input validation, CORS configuration
+
+#### Advanced Features
+
+- **File Upload**: Book cover image handling with optimization
+- **External APIs**: ISBN lookup integration (Google Books API)
+- **Advanced UI**: Additional shadcn-vue components (Select, Checkbox, Toast, etc.)
+- **Data Export**: User data export and system backup functionality
+
+#### Production Readiness
+
+- **Testing**: Vitest unit tests and Playwright E2E testing
+- **Performance**: Code splitting, lazy loading, and optimization
+- **Deployment**: Docker containerization and Nix service configuration
+- **Monitoring**: Error tracking, performance monitoring, and logging
+
+## Goals
+
+- **Self-hosted solution** for private libraries (family/personal use)
+- **Admin-managed user accounts** - default admin user creates accounts for others
+- View and manage personal libraries (add, edit, remove books)
+- User profile management and admin settings
+- Responsive, modern UI
+- Easy self-hosting (OCI container, Nix service)
+- **No public registration** - invite-only user creation
+
+## Features
+
+### 1. Login View
+
+- User login form with email/username and password
+- "Remember me" functionality
+- Password visibility toggle
+- Form validation with real-time feedback
+- Authentication (JWT or session-based)
+- Error handling for failed logins
+- **NO public registration** - admin creates accounts only
+- Forgot password functionality (admin-assisted only)
+
+### 2. Library View
+
+- **Book List Display:**
+  - Grid/list view toggle
+  - Pagination or infinite scroll
+  - Sort by: title, author, date added, rating, status
+  - Filter by: status, genre, rating
+  - Search functionality (title, author, ISBN)
+
+- **Book Management:**
+  - Add new books (manual entry or barcode/ISBN lookup)
+  - Edit existing books (inline editing or modal)
+  - Delete books with confirmation
+  - Bulk operations (mark as read, delete multiple)
+
+- **Book Details:**
+  - Cover image upload/display
+  - Reading progress tracking
+  - Personal notes and reviews
+  - Reading dates (started, completed)
+  - Star rating system
+
+### 3. Admin Settings View (Role-Based Access)
+
+#### For All Users
+
+- Update user profile (name, email, password)
+- Personal preferences (theme, language, etc.)
+- Data export (personal library only)
+- Session management (view active sessions, logout from all devices)
+
+#### For Admin Users Only
+
+- **User Management:**
+  - Create new user accounts
+  - Edit user profiles (name, email, role)
+  - Reset user passwords
+  - Deactivate/delete user accounts
+  - View user activity and statistics
+- **System Settings:**
+  - Application configuration
+  - Security settings
+  - Backup and restore functionality
+  - System-wide data import/export
+  - Audit logs and user activity monitoring
+
+## Data Models
+
+### User
+
+- `id` (unique identifier)
+- `email` (unique, required)
+- `name` (display name)
+- `password_hash` (hashed password)
+- `role` (enum: 'admin', 'user') - admin can manage users, users can only manage their own books
+- `is_active` (boolean) - admin can deactivate users
+- `preferences` (JSON object for user settings)
+- `last_login_at` (timestamp)
+- `created_at`, `updated_at` (timestamps)
+- `created_by` (foreign key to User) - track which admin created the account
+
+### Book
+
+- `id` (unique identifier)
+- `user_id` (foreign key to User)
+- `title` (required)
+- `author` (required)
+- `isbn` (optional, unique constraint with user_id)
+- `genre` (optional)
+- `status` (enum: 'to-read', 'reading', 'completed', 'dnf')
+- `rating` (1-5 stars, optional)
+- `notes` (user notes, optional)
+- `date_added`, `date_started`, `date_completed` (timestamps)
+- `created_at`, `updated_at` (timestamps)
+
+## API Endpoints
+
+### Authentication
+
+- `POST /api/auth/login` - User login (all users)
+- `POST /api/auth/logout` - User logout (all users)
+- `GET /api/auth/me` - Get current user info (all users)
+- `POST /api/auth/reset-password` - Admin-assisted password reset
+
+### Books
+
+- `GET /api/books` - List user's books (with pagination, filtering, sorting)
+- `POST /api/books` - Add new book
+- `GET /api/books/:id` - Get specific book
+- `PUT /api/books/:id` - Update book
+- `DELETE /api/books/:id` - Delete book
+- `GET /api/books/search` - Search books (external API integration optional)
+
+### User Management
+
+- `GET /api/user/profile` - Get user profile (all users)
+- `PUT /api/user/profile` - Update user profile (all users)
+- `PUT /api/user/password` - Change password (all users)
+- `GET /api/user/export` - Export user data (all users)
+
+### Admin-Only Endpoints
+
+- `GET /api/admin/users` - List all users (admin only)
+- `POST /api/admin/users` - Create new user account (admin only)
+- `GET /api/admin/users/:id` - Get specific user details (admin only)
+- `PUT /api/admin/users/:id` - Update user account (admin only)
+- `DELETE /api/admin/users/:id` - Delete/deactivate user account (admin only)
+- `POST /api/admin/users/:id/reset-password` - Reset user password (admin only)
+- `GET /api/admin/system/stats` - System statistics (admin only)
+- `POST /api/admin/system/backup` - Create system backup (admin only)
+- `POST /api/admin/system/import` - System-wide data import (admin only)
+
+## Security Considerations
+
+- **Authentication:** JWT tokens with secure httpOnly cookies
+- **Role-Based Authorization:** Admin vs regular user permissions strictly enforced
+- **User Isolation:** Users can only access their own data (books, profile)
+- **Admin Controls:** Only admins can create/manage user accounts
+- **Default Admin Setup:** First-time setup creates default admin user
+- **Input Validation:** Server-side validation for all inputs
+- **Rate Limiting:** Prevent brute force attacks on login endpoints
+- **CORS:** Properly configured for frontend domain only
+- **HTTPS:** Force HTTPS in production
+- **Password Security:** Bcrypt hashing with salt rounds ≥ 12
+- **Session Management:** Admin can view/revoke user sessions
+- **Audit Logging:** Track admin actions for user management
+
+## Performance & Optimization
+
+- **Frontend:**
+  - Code splitting with Vue Router
+  - Lazy loading of components
+  - Image optimization
+  - Virtual scrolling for large book lists
+  - Caching with VueUse `useLocalStorage`
+
+- **Backend:**
+  - Database indexing on frequently queried fields
+  - Pagination for large datasets
+  - Response compression
+  - Static asset caching
+
+## Tech Stack
 
 - **Frontend:** Vue 3, Vite, Tailwind CSS v4, Pinia (state), Vue Router
 - **HTTP Client:** Axios or Fetch API
@@ -47,151 +297,6 @@
 - **@vue/test-utils** (Vue testing utilities)
 - **Cypress** or **Playwright** (E2E testing)
 - **TypeScript** (type safety) - Static type checking
-
-A simple, self-hostable fullstack library web application with three main views: Login, Library, and Settings. Built with Vue 3, Vite, and styled using Tailwind CSS v4. Designed for easy deployment via OCI containers and as a Nix service.
-
-## Goals
-
-- User authentication (login/logout)
-- View and manage a personal library (add, edit, remove books)
-- User settings (profile, preferences)
-- Responsive, modern UI
-- Easy self-hosting (OCI container, Nix service)
-
-## Features
-
-### 1. Login View
-
-- User login form with email/username and password
-- "Remember me" functionality
-- Password visibility toggle
-- Form validation with real-time feedback
-- Authentication (JWT or session-based)
-- Error handling for failed logins
-- Registration flow (if enabled)
-- Forgot password functionality (optional)
-
-### 2. Library View
-
-- **Book List Display:**
-  - Grid/list view toggle
-  - Pagination or infinite scroll
-  - Sort by: title, author, date added, rating, status
-  - Filter by: status, genre, rating
-  - Search functionality (title, author, ISBN)
-
-- **Book Management:**
-  - Add new books (manual entry or barcode/ISBN lookup)
-  - Edit existing books (inline editing or modal)
-  - Delete books with confirmation
-  - Bulk operations (mark as read, delete multiple)
-
-- **Book Details:**
-  - Cover image upload/display
-  - Reading progress tracking
-  - Personal notes and reviews
-  - Reading dates (started, completed)
-  - Star rating system
-
-### 3. Settings View
-
-- Update user profile (name, email, password)
-- App preferences (theme, etc.)
-- Data import/export functionality
-- Session management (view active sessions, logout from all devices)
-
-## Data Models
-
-### User
-
-- `id` (unique identifier)
-- `email` (unique, required)
-- `name` (display name)
-- `password_hash` (hashed password)
-- `preferences` (JSON object for user settings)
-- `created_at`, `updated_at` (timestamps)
-
-### Book
-
-- `id` (unique identifier)
-- `user_id` (foreign key to User)
-- `title` (required)
-- `author` (required)
-- `isbn` (optional, unique constraint with user_id)
-- `genre` (optional)
-- `status` (enum: 'to-read', 'reading', 'completed', 'dnf')
-- `rating` (1-5 stars, optional)
-- `notes` (user notes, optional)
-- `date_added`, `date_started`, `date_completed` (timestamps)
-- `created_at`, `updated_at` (timestamps)
-
-## API Endpoints
-
-### Authentication
-
-- `POST /api/auth/login` - User login
-- `POST /api/auth/logout` - User logout
-- `POST /api/auth/register` - User registration (if enabled)
-- `GET /api/auth/me` - Get current user info
-
-### Books
-
-- `GET /api/books` - List user's books (with pagination, filtering, sorting)
-- `POST /api/books` - Add new book
-- `GET /api/books/:id` - Get specific book
-- `PUT /api/books/:id` - Update book
-- `DELETE /api/books/:id` - Delete book
-- `GET /api/books/search` - Search books (external API integration optional)
-
-### User Management
-
-- `GET /api/user/profile` - Get user profile
-- `PUT /api/user/profile` - Update user profile
-- `PUT /api/user/password` - Change password
-- `GET /api/user/export` - Export user data
-- `POST /api/user/import` - Import user data
-
-## Security Considerations
-
-- **Authentication:** JWT tokens with secure httpOnly cookies
-- **Authorization:** User can only access their own data
-- **Input Validation:** Server-side validation for all inputs
-- **Rate Limiting:** Prevent brute force attacks
-- **CORS:** Properly configured for frontend domain
-- **HTTPS:** Force HTTPS in production
-- **Password Security:** Bcrypt hashing with salt rounds ≥ 12
-
-## Performance & Optimization
-
-- **Frontend:**
-  - Code splitting with Vue Router
-  - Lazy loading of components
-  - Image optimization
-  - Virtual scrolling for large book lists
-  - Caching with VueUse `useLocalStorage`
-
-- **Backend:**
-  - Database indexing on frequently queried fields
-  - Pagination for large datasets
-  - Response compression
-  - Static asset caching
-
-## Tech Stack
-
-- **Frontend:** Vue 3, Vite, Tailwind CSS v4, Pinia (state), Vue Router, Axios (API)
-- **Backend:** (To be defined, e.g., Node.js/Express, Fastify, or Rust/Go)
-- **Auth:** JWT or session-based
-- **Deployment:** Docker/OCI container, Nix service
-
-## Helpful Libraries
-
-- Pinia (state management)
-- Vue Router (routing)
-- VeeValidate or VueUseForm (form validation)
-- Axios (HTTP client)
-- Headless UI or DaisyUI (UI components)
-- Heroicons (icons)
-- Vitest, Cypress (testing)
 
 ## User Experience & Design
 
@@ -250,8 +355,14 @@ A simple, self-hostable fullstack library web application with three main views:
 
 ## Non-Goals
 
-- No third-party cloud dependencies
-- No complex multi-user or admin features
+- **No public registration or signup** - admin-managed accounts only
+- **No multi-tenancy** - single instance per family/organization
+- **No third-party cloud dependencies** - fully self-contained
+- **No complex multi-user collaboration features** - focus on personal libraries
+- **No social features** - no sharing, reviews, or community features
+- **No payment or subscription handling** - free self-hosted solution
+- **No external authentication** (OAuth, SAML) - simple email/password auth
+- **No advanced admin features** - keep admin interface simple and functional
 
 ## Success Criteria
 
@@ -511,11 +622,66 @@ describe('filterBooks', () => {
 })
 ```
 
-### Benefits of This Architecture
+## UI Component Library Implementation (✅ Completed)
 
-1. **Maintainability** - Clear separation of concerns and single responsibility
-2. **Testability** - Pure functions are easy to test in isolation
-3. **Reusability** - Functional utilities can be reused across components
-4. **Predictability** - Unidirectional data flow makes state changes predictable
-5. **Type Safety** - TypeScript interfaces ensure compile-time safety
-6. **Performance** - Vue's reactivity system optimizes re-renders automatically
+### shadcn-vue Design System
+
+The application uses a comprehensive **shadcn-vue** component library built with:
+
+- **Tailwind CSS v4**: Latest version with `@theme` directive for CSS-first configuration
+- **Radix Vue**: Headless, accessible component primitives
+- **Class Variance Authority (CVA)**: Type-safe component variants
+- **TypeScript**: Full type safety with proper prop interfaces
+
+### Available Components
+
+#### Core UI Components (`/src/components/ui/`)
+
+1. **Button** (`UiButton`)
+   - Variants: default, destructive, outline, secondary, ghost, link
+   - Sizes: default, sm, lg, icon
+   - Full accessibility with ARIA labels
+
+2. **Card System** (`UiCard`, `UiCardHeader`, `UiCardTitle`, `UiCardDescription`, `UiCardContent`, `UiCardFooter`)
+   - Composable card layout components
+   - Consistent spacing and typography
+   - Responsive design patterns
+
+3. **Form Controls**
+   - `UiInput`: Text input with v-model support and validation states
+   - `UiLabel`: Accessible form labels with proper associations
+
+4. **Data Display**
+   - `UiTable` + sub-components: Full table implementation with header, body, rows, cells
+   - Responsive table design with proper semantic HTML
+
+5. **Interactive Elements**
+   - `UiDropdownMenu` + sub-components: Accessible dropdown menus with keyboard navigation
+   - Animation support with smooth transitions
+
+### Design System Features
+
+- **Accessibility**: WCAG compliant with ARIA labels, keyboard navigation, screen reader support
+- **Responsive Design**: Mobile-first approach with responsive breakpoints
+- **Dark Mode**: CSS variable-based theming ready for light/dark mode toggle
+- **Consistent Spacing**: Design token-based spacing system
+- **Type Safety**: Full TypeScript support with proper prop validation
+
+### Usage Example
+
+```vue
+<script setup>
+import { UiButton, UiCard, UiCardHeader, UiCardTitle, UiCardContent } from '@/components/ui'
+</script>
+
+<template>
+  <UiCard>
+    <UiCardHeader>
+      <UiCardTitle>Book Details</UiCardTitle>
+    </UiCardHeader>
+    <UiCardContent>
+      <UiButton variant="primary">Edit Book</UiButton>
+    </UiCardContent>
+  </UiCard>
+</template>
+```
