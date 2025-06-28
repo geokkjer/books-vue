@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { computed, onMounted } from 'vue'
+import { useLibraryStore, useUIStore } from '@/stores'
 import {
     UiCard,
     UiCardHeader,
@@ -15,100 +16,91 @@ import {
 } from '@/components/ui'
 import { MoreHorizontal, Search, Plus } from 'lucide-vue-next'
 
-// Sample book data
-const books = ref([
-    {
-        id: 1,
-        title: 'The Vue.js Guide',
-        author: 'Evan You',
-        genre: 'Technology',
-        year: 2023,
-        status: 'read',
-        cover: 'https://picsum.photos/200/300?random=1'
-    },
-    {
-        id: 2,
-        title: 'JavaScript: The Good Parts',
-        author: 'Douglas Crockford',
-        genre: 'Technology',
-        year: 2008,
-        status: 'unread',
-        cover: 'https://picsum.photos/200/300?random=2'
-    },
-    {
-        id: 3,
-        title: 'Clean Code',
-        author: 'Robert C. Martin',
-        genre: 'Technology',
-        year: 2008,
-        status: 'reading',
-        cover: 'https://picsum.photos/200/300?random=3'
-    },
-    {
-        id: 4,
-        title: 'The Pragmatic Programmer',
-        author: 'Andy Hunt & Dave Thomas',
-        genre: 'Technology',
-        year: 1999,
-        status: 'read',
-        cover: 'https://picsum.photos/200/300?random=4'
-    },
-    {
-        id: 5,
-        title: 'Design Patterns',
-        author: 'Gang of Four',
-        genre: 'Technology',
-        year: 1994,
-        status: 'unread',
-        cover: 'https://picsum.photos/200/300?random=5'
-    },
-    {
-        id: 6,
-        title: 'Refactoring',
-        author: 'Martin Fowler',
-        genre: 'Technology',
-        year: 1999,
-        status: 'reading',
-        cover: 'https://picsum.photos/200/300?random=6'
+// Stores
+const libraryStore = useLibraryStore()
+const uiStore = useUIStore()
+
+// Computed properties from stores
+const books = computed(() => libraryStore.paginatedBooks)
+const isLoading = computed(() => libraryStore.isLoading)
+const searchQuery = computed({
+    get: () => libraryStore.searchQuery,
+    set: (value: string) => libraryStore.searchBooks(value)
+})
+const totalBooks = computed(() => libraryStore.books.length)
+const currentPage = computed(() => libraryStore.currentPage)
+const totalPages = computed(() => libraryStore.totalPages)
+
+// Load books when component mounts
+onMounted(async () => {
+    try {
+        await libraryStore.fetchBooks()
+    } catch {
+        uiStore.showError('Failed to load books', 'Please try refreshing the page.')
     }
-])
-
-const searchTerm = ref('')
-
-const filteredBooks = computed(() => {
-    if (!searchTerm.value) return books.value
-
-    return books.value.filter(book =>
-        book.title.toLowerCase().includes(searchTerm.value.toLowerCase()) ||
-        book.author.toLowerCase().includes(searchTerm.value.toLowerCase()) ||
-        book.genre.toLowerCase().includes(searchTerm.value.toLowerCase())
-    )
 })
 
 function getStatusColor(status: string) {
     switch (status) {
-        case 'read': return 'bg-green-100 text-green-800'
+        case 'completed': return 'bg-green-100 text-green-800'
         case 'reading': return 'bg-blue-100 text-blue-800'
-        case 'unread': return 'bg-gray-100 text-gray-800'
+        case 'to_read': return 'bg-gray-100 text-gray-800'
         default: return 'bg-gray-100 text-gray-800'
     }
 }
 
-function editBook(bookId: number) {
-    console.log('Edit book:', bookId)
-}
-
-function deleteBook(bookId: number) {
-    const index = books.value.findIndex(book => book.id === bookId)
-    if (index !== -1) {
-        books.value.splice(index, 1)
+function getStatusLabel(status: string) {
+    switch (status) {
+        case 'completed': return 'Completed'
+        case 'reading': return 'Reading'
+        case 'to_read': return 'To Read'
+        default: return status
     }
 }
 
-function markAsRead(bookId: number) {
-    const book = books.value.find(book => book.id === bookId)
+function handleAddBook() {
+    uiStore.openModal('addBook')
+}
+
+async function editBook(bookId: number) {
+    // Set the book to edit and open modal
+    // For now, just show info - this would be expanded with actual edit logic
+    const book = libraryStore.books.find(b => b.id === bookId)
     if (book) {
-        book.status = 'read'
+        uiStore.showInfo('Edit Book', `Editing "${book.title}" - Feature coming soon!`)
+    }
+}
+
+async function deleteBook(bookId: number) {
+    try {
+        const book = libraryStore.books.find(b => b.id === bookId)
+        if (book && confirm(`Are you sure you want to delete "${book.title}"?`)) {
+            await libraryStore.deleteBook(bookId)
+            uiStore.showSuccess('Book deleted', 'The book has been removed from your library.')
+        }
+    } catch {
+        uiStore.showError('Delete failed', 'Failed to delete the book. Please try again.')
+    }
+}
+
+async function updateBookStatus(bookId: number, newStatus: 'to_read' | 'reading' | 'completed') {
+    try {
+        await libraryStore.updateBook(bookId, { status: newStatus })
+        uiStore.showSuccess('Status updated', 'Book status has been updated.')
+    } catch {
+        uiStore.showError('Update failed', 'Failed to update book status. Please try again.')
+    }
+}
+
+function nextPage() {
+    if (currentPage.value < totalPages.value) {
+        libraryStore.setPage(currentPage.value + 1)
+    }
+}
+
+function prevPage() {
+    if (currentPage.value > 1) {
+        libraryStore.setPage(currentPage.value - 1)
     }
 }
 </script>
@@ -121,7 +113,7 @@ function markAsRead(bookId: number) {
                 <h1 class="text-3xl font-bold tracking-tight">My Library</h1>
                 <p class="text-muted-foreground">Manage your personal book collection</p>
             </div>
-            <UiButton class="md:w-auto">
+            <UiButton @click="handleAddBook" class="md:w-auto">
                 <Plus class="w-4 h-4" />
                 Add Book
             </UiButton>
@@ -131,19 +123,28 @@ function markAsRead(bookId: number) {
         <div class="flex flex-col gap-4 md:flex-row md:items-center">
             <div class="relative flex-1 max-w-sm">
                 <Search class="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                <UiInput v-model="searchTerm" placeholder="Search books..." class="pl-10" />
+                <UiInput v-model="searchQuery" placeholder="Search books..." class="pl-10" />
             </div>
             <div class="text-sm text-muted-foreground">
-                {{ filteredBooks.length }} of {{ books.length }} books
+                {{ books.length }} books ({{ totalBooks }} total)
             </div>
         </div>
 
+        <!-- Loading state -->
+        <div v-if="isLoading" class="flex justify-center py-12">
+            <div class="text-muted-foreground">Loading your books...</div>
+        </div>
+
         <!-- Books Grid -->
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-            <UiCard v-for="book in filteredBooks" :key="book.id"
-                class="overflow-hidden transition-shadow hover:shadow-lg">
+        <div v-if="!isLoading" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            <UiCard v-for="book in books" :key="book.id" class="overflow-hidden transition-shadow hover:shadow-lg">
                 <div class="aspect-[3/4] bg-muted flex items-center justify-center">
-                    <img :src="book.cover" :alt="book.title" class="w-full h-full object-cover" />
+                    <img v-if="book.cover_image" :src="book.cover_image" :alt="book.title"
+                        class="w-full h-full object-cover" />
+                    <div v-else class="text-muted-foreground text-center p-4">
+                        <div class="text-lg font-medium">{{ book.title.substring(0, 20) }}...</div>
+                        <div class="text-sm">No cover</div>
+                    </div>
                 </div>
 
                 <UiCardHeader class="pb-2">
@@ -160,8 +161,17 @@ function markAsRead(bookId: number) {
                                 <UiDropdownMenuItem @click="editBook(book.id)">
                                     Edit
                                 </UiDropdownMenuItem>
-                                <UiDropdownMenuItem v-if="book.status !== 'read'" @click="markAsRead(book.id)">
-                                    Mark as Read
+                                <UiDropdownMenuItem v-if="book.status !== 'completed'"
+                                    @click="updateBookStatus(book.id, 'completed')">
+                                    Mark as Completed
+                                </UiDropdownMenuItem>
+                                <UiDropdownMenuItem v-if="book.status !== 'reading'"
+                                    @click="updateBookStatus(book.id, 'reading')">
+                                    Mark as Reading
+                                </UiDropdownMenuItem>
+                                <UiDropdownMenuItem v-if="book.status !== 'to_read'"
+                                    @click="updateBookStatus(book.id, 'to_read')">
+                                    Mark as To Read
                                 </UiDropdownMenuItem>
                                 <UiDropdownMenuSeparator />
                                 <UiDropdownMenuItem @click="deleteBook(book.id)"
@@ -176,27 +186,43 @@ function markAsRead(bookId: number) {
                 <UiCardContent class="pt-0">
                     <p class="text-sm text-muted-foreground mb-2">{{ book.author }}</p>
                     <div class="flex items-center justify-between">
-                        <span class="text-sm text-muted-foreground">{{ book.year }}</span>
+                        <span v-if="book.genre" class="text-sm text-muted-foreground">{{ book.genre }}</span>
                         <span :class="['px-2 py-1 rounded-full text-xs font-medium', getStatusColor(book.status)]">
-                            {{ book.status }}
+                            {{ getStatusLabel(book.status) }}
                         </span>
+                    </div>
+                    <div v-if="book.rating" class="mt-2 flex items-center">
+                        <span class="text-sm text-muted-foreground">Rating: {{ book.rating }}/5</span>
                     </div>
                 </UiCardContent>
             </UiCard>
         </div>
 
         <!-- Empty State -->
-        <div v-if="filteredBooks.length === 0" class="text-center py-12">
+        <div v-if="!isLoading && books.length === 0" class="text-center py-12">
             <div class="w-16 h-16 mx-auto mb-4 bg-muted rounded-full flex items-center justify-center">
                 <Search class="w-8 h-8 text-muted-foreground" />
             </div>
             <h3 class="text-lg font-medium mb-2">No books found</h3>
             <p class="text-muted-foreground mb-4">
-                {{ searchTerm ? 'Try adjusting your search terms' : 'Start by adding your first book' }}
+                {{ searchQuery ? 'Try adjusting your search terms' : 'Start by adding your first book' }}
             </p>
-            <UiButton v-if="!searchTerm">
+            <UiButton v-if="!searchQuery" @click="handleAddBook">
                 <Plus class="w-4 h-4" />
                 Add Your First Book
+            </UiButton>
+        </div>
+
+        <!-- Pagination -->
+        <div v-if="!isLoading && totalPages > 1" class="flex justify-center items-center gap-4 mt-8">
+            <UiButton @click="prevPage" :disabled="currentPage === 1" variant="outline">
+                Previous
+            </UiButton>
+            <span class="text-sm text-muted-foreground">
+                Page {{ currentPage }} of {{ totalPages }}
+            </span>
+            <UiButton @click="nextPage" :disabled="currentPage === totalPages" variant="outline">
+                Next
             </UiButton>
         </div>
     </div>

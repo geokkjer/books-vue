@@ -1,6 +1,7 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 import { useRouter } from 'vue-router'
+import { useAuthStore, useUIStore } from '@/stores'
 import {
     UiCard,
     UiCardHeader,
@@ -12,22 +13,48 @@ import {
 } from '@/components/ui'
 
 const router = useRouter()
+const authStore = useAuthStore()
+const uiStore = useUIStore()
+
+// Form data
 const username = ref('')
 const password = ref('')
-const isLoading = ref(false)
+const rememberMe = ref(false)
+
+// Computed properties from stores
+const isLoading = computed(() => authStore.isLoading)
+const error = computed(() => authStore.error)
 
 async function handleSubmit() {
-    isLoading.value = true
+    try {
+        await authStore.login({
+            username: username.value,
+            password: password.value,
+            remember: rememberMe.value
+        })
 
-    // Simulate login logic
-    await new Promise(resolve => setTimeout(resolve, 1000))
+        // Show success notification
+        uiStore.showSuccess('Welcome back!', 'You have been successfully logged in.')
 
-    // For demo purposes, accept any non-empty credentials
-    if (username.value && password.value) {
-        router.push('/library')
+        // Navigate to library if login was successful
+        if (authStore.isAuthenticated) {
+            router.push('/library')
+        }
+    } catch {
+        // Error handling is done in the store, but we can show additional UI feedback
+        uiStore.showError(
+            'Login Failed',
+            error.value || 'Please check your credentials and try again.'
+        )
     }
+}
 
-    isLoading.value = false
+// Dev login for easy testing
+async function handleDevLogin() {
+    username.value = 'admin'
+    password.value = 'password'
+    rememberMe.value = true
+    await handleSubmit()
 }
 </script>
 
@@ -39,6 +66,12 @@ async function handleSubmit() {
                 <p class="text-muted-foreground">Sign in to access your book library</p>
             </UiCardHeader>
             <UiCardContent class="space-y-4">
+                <!-- Display error message if there's an error -->
+                <div v-if="error"
+                    class="p-3 text-sm text-destructive bg-destructive/10 border border-destructive/20 rounded-md">
+                    {{ error }}
+                </div>
+
                 <form @submit.prevent="handleSubmit" class="space-y-4">
                     <div class="space-y-2">
                         <UiLabel for="username">Username</UiLabel>
@@ -52,13 +85,29 @@ async function handleSubmit() {
                             :disabled="isLoading" required />
                     </div>
 
+                    <div class="flex items-center space-x-2">
+                        <input id="remember" v-model="rememberMe" type="checkbox" class="rounded border-border"
+                            :disabled="isLoading" />
+                        <UiLabel for="remember" class="text-sm font-normal">Remember me</UiLabel>
+                    </div>
+
                     <UiButton type="submit" class="w-full" :disabled="isLoading">
                         {{ isLoading ? 'Signing in...' : 'Sign In' }}
                     </UiButton>
                 </form>
 
+                <!-- Dev Login Section -->
+                <div class="border-t pt-4">
+                    <div class="text-center text-sm text-muted-foreground mb-3">
+                        <p>Development Mode</p>
+                    </div>
+                    <UiButton @click="handleDevLogin" variant="outline" class="w-full" :disabled="isLoading">
+                        🚀 Quick Login (admin)
+                    </UiButton>
+                </div>
+
                 <div class="text-center text-sm text-muted-foreground">
-                    <p>Demo: Use any username and password to sign in</p>
+                    <p>Self-hosted book library system</p>
                 </div>
             </UiCardContent>
         </UiCard>

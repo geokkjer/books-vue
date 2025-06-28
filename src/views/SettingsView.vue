@@ -1,5 +1,7 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { computed, onMounted } from 'vue'
+import { useRouter } from 'vue-router'
+import { useAdminStore, useUIStore } from '@/stores'
 import {
     UiCard,
     UiCardHeader,
@@ -19,55 +21,71 @@ import {
     UiDropdownMenuSeparator,
 } from '@/components/ui'
 import { MoreHorizontal, Plus, ArrowLeft } from 'lucide-vue-next'
-import { useRouter } from 'vue-router'
 
 const router = useRouter()
 
-// Sample user data
-const users = ref([
-    {
-        id: 1,
-        username: 'admin',
-        email: 'admin@library.local',
-        role: 'admin',
-        isActive: true,
-        createdAt: '2024-01-15'
-    },
-    {
-        id: 2,
-        username: 'alice',
-        email: 'alice@family.local',
-        role: 'user',
-        isActive: true,
-        createdAt: '2024-02-20'
-    },
-    {
-        id: 3,
-        username: 'bob',
-        email: 'bob@family.local',
-        role: 'user',
-        isActive: false,
-        createdAt: '2024-03-10'
+// Stores
+const adminStore = useAdminStore()
+const uiStore = useUIStore()
+
+// Computed properties from stores
+const users = computed(() => adminStore.users)
+const isLoading = computed(() => adminStore.isLoading)
+const error = computed(() => adminStore.error)
+const systemSettings = computed(() => adminStore.systemSettings)
+const stats = computed(() => adminStore.stats)
+
+// Load data when component mounts
+onMounted(async () => {
+    try {
+        await Promise.all([
+            adminStore.fetchUsers(),
+            adminStore.fetchSystemSettings(),
+            adminStore.fetchStats(),
+            adminStore.fetchAuditLogs()
+        ])
+    } catch {
+        uiStore.showError('Failed to load admin data', 'Please try refreshing the page.')
     }
-])
+})
 
 function editUser(userId: number) {
-    console.log('Edit user:', userId)
+    const user = adminStore.getUserById(userId)
+    if (user) {
+        // For now, just show info - this would be expanded with actual edit modal
+        uiStore.showInfo('Edit User', `Editing user "${user.name}" - Feature coming soon!`)
+    }
 }
 
-function deactivateUser(userId: number) {
-    const user = users.value.find(u => u.id === userId)
-    if (user) {
-        user.isActive = !user.isActive
+async function deleteUser(userId: number) {
+    try {
+        const user = adminStore.getUserById(userId)
+        if (user && confirm(`Are you sure you want to delete user "${user.name}"?`)) {
+            await adminStore.deleteUser(userId)
+            uiStore.showSuccess('User deleted', 'The user has been removed from the system.')
+        }
+    } catch {
+        uiStore.showError('Delete failed', 'Failed to delete the user. Please try again.')
     }
 }
 
 function resetPassword(userId: number) {
-    console.log('Reset password for user:', userId)
+    const user = adminStore.getUserById(userId)
+    if (user) {
+        uiStore.showInfo('Reset Password', `Reset password for "${user.name}" - Feature coming soon!`)
+    }
+}
+
+function addUser() {
+    uiStore.showInfo('Add User', 'Add new user functionality coming soon!')
 }
 
 function goToLibrary() {
     router.push('/library')
+}
+
+function getRoleColor(role: string) {
+    return role === 'admin' ? 'bg-red-100 text-red-800' : 'bg-blue-100 text-blue-800'
 }
 </script>
 
@@ -92,45 +110,50 @@ function goToLibrary() {
                         <UiCardTitle>User Management</UiCardTitle>
                         <p class="text-sm text-muted-foreground mt-1">Manage user accounts and permissions</p>
                     </div>
-                    <UiButton>
+                    <UiButton @click="addUser">
                         <Plus class="w-4 h-4" />
                         Add User
                     </UiButton>
                 </div>
             </UiCardHeader>
             <UiCardContent>
-                <UiTable>
+                <!-- Loading state -->
+                <div v-if="isLoading" class="flex justify-center py-8">
+                    <div class="text-muted-foreground">Loading users...</div>
+                </div>
+
+                <!-- Error state -->
+                <div v-else-if="error"
+                    class="p-4 text-sm text-destructive bg-destructive/10 border border-destructive/20 rounded-md">
+                    {{ error }}
+                </div>
+
+                <!-- Users table -->
+                <UiTable v-else>
                     <UiTableHeader>
                         <UiTableRow>
-                            <UiTableHead>Username</UiTableHead>
+                            <UiTableHead>Name</UiTableHead>
                             <UiTableHead>Email</UiTableHead>
                             <UiTableHead>Role</UiTableHead>
-                            <UiTableHead>Status</UiTableHead>
                             <UiTableHead>Created</UiTableHead>
                             <UiTableHead class="w-12">Actions</UiTableHead>
                         </UiTableRow>
                     </UiTableHeader>
                     <UiTableBody>
                         <UiTableRow v-for="user in users" :key="user.id">
-                            <UiTableCell class="font-medium">{{ user.username }}</UiTableCell>
+                            <UiTableCell class="font-medium">{{ user.name }}</UiTableCell>
                             <UiTableCell>{{ user.email }}</UiTableCell>
                             <UiTableCell>
                                 <span :class="[
                                     'px-2 py-1 rounded-full text-xs font-medium',
-                                    user.role === 'admin' ? 'bg-purple-100 text-purple-800' : 'bg-blue-100 text-blue-800'
+                                    getRoleColor(user.role)
                                 ]">
-                                    {{ user.role }}
+                                    {{ user.role === 'admin' ? 'Administrator' : 'User' }}
                                 </span>
                             </UiTableCell>
-                            <UiTableCell>
-                                <span :class="[
-                                    'px-2 py-1 rounded-full text-xs font-medium',
-                                    user.isActive ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
-                                ]">
-                                    {{ user.isActive ? 'Active' : 'Inactive' }}
-                                </span>
+                            <UiTableCell class="text-muted-foreground">
+                                {{ new Date(user.created_at).toLocaleDateString() }}
                             </UiTableCell>
-                            <UiTableCell class="text-muted-foreground">{{ user.createdAt }}</UiTableCell>
                             <UiTableCell>
                                 <UiDropdownMenu>
                                     <UiDropdownMenuTrigger as-child>
@@ -147,8 +170,9 @@ function goToLibrary() {
                                             Reset Password
                                         </UiDropdownMenuItem>
                                         <UiDropdownMenuSeparator />
-                                        <UiDropdownMenuItem @click="deactivateUser(user.id)">
-                                            {{ user.isActive ? 'Deactivate' : 'Activate' }} User
+                                        <UiDropdownMenuItem @click="deleteUser(user.id)"
+                                            class="text-destructive focus:text-destructive">
+                                            Delete User
                                         </UiDropdownMenuItem>
                                     </UiDropdownMenuContent>
                                 </UiDropdownMenu>
@@ -166,17 +190,58 @@ function goToLibrary() {
                 <p class="text-sm text-muted-foreground">Configure library preferences</p>
             </UiCardHeader>
             <UiCardContent class="space-y-4">
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <!-- Loading state -->
+                <div v-if="isLoading" class="flex justify-center py-4">
+                    <div class="text-muted-foreground">Loading settings...</div>
+                </div>
+
+                <!-- Settings form -->
+                <div v-else class="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div class="space-y-2">
                         <label class="text-sm font-medium">Library Name</label>
-                        <input class="w-full px-3 py-2 border rounded-md" value="My Personal Library" readonly />
+                        <input class="w-full px-3 py-2 border rounded-md" :value="systemSettings.app_name" readonly />
                     </div>
                     <div class="space-y-2">
-                        <label class="text-sm font-medium">Books per Page</label>
-                        <input class="w-full px-3 py-2 border rounded-md" value="12" readonly />
+                        <label class="text-sm font-medium">Description</label>
+                        <input class="w-full px-3 py-2 border rounded-md" :value="systemSettings.app_description"
+                            readonly />
+                    </div>
+                    <div class="space-y-2">
+                        <label class="text-sm font-medium">Max Books per User</label>
+                        <input class="w-full px-3 py-2 border rounded-md" :value="systemSettings.max_books_per_user"
+                            readonly />
+                    </div>
+                    <div class="space-y-2">
+                        <label class="text-sm font-medium">Backup Frequency</label>
+                        <input class="w-full px-3 py-2 border rounded-md" :value="systemSettings.backup_frequency"
+                            readonly />
                     </div>
                 </div>
-                <UiButton>Save Settings</UiButton>
+
+                <!-- Stats -->
+                <div v-if="!isLoading" class="mt-6 pt-6 border-t">
+                    <h4 class="text-sm font-medium mb-3">System Statistics</h4>
+                    <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                        <div class="text-center p-3 bg-muted rounded-lg">
+                            <div class="text-2xl font-bold">{{ stats.totalUsers }}</div>
+                            <div class="text-sm text-muted-foreground">Total Users</div>
+                        </div>
+                        <div class="text-center p-3 bg-muted rounded-lg">
+                            <div class="text-2xl font-bold">{{ stats.totalBooks }}</div>
+                            <div class="text-sm text-muted-foreground">Total Books</div>
+                        </div>
+                        <div class="text-center p-3 bg-muted rounded-lg">
+                            <div class="text-2xl font-bold">{{ stats.activeUsers }}</div>
+                            <div class="text-sm text-muted-foreground">Active Users</div>
+                        </div>
+                        <div class="text-center p-3 bg-muted rounded-lg">
+                            <div class="text-2xl font-bold">{{ stats.recentActivity }}</div>
+                            <div class="text-sm text-muted-foreground">Recent Actions</div>
+                        </div>
+                    </div>
+                </div>
+
+                <UiButton disabled>Save Settings (Coming Soon)</UiButton>
             </UiCardContent>
         </UiCard>
     </div>

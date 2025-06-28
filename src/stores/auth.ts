@@ -27,37 +27,31 @@ export const useAuthStore = defineStore('auth', () => {
             // Temporary mock implementation
             await new Promise(resolve => setTimeout(resolve, 1000)) // Simulate API delay
 
-            if (credentials.email === 'admin@example.com' && credentials.password === 'password') {
-                const mockUser: User = {
-                    id: 1,
-                    email: credentials.email,
-                    name: 'Admin User',
-                    role: 'admin',
-                    created_at: new Date().toISOString(),
-                    updated_at: new Date().toISOString()
-                }
-                const mockToken = 'mock-jwt-token-' + Date.now()
+            // Accept any non-empty username/password for demo, with specific admin credentials
+            if (credentials.username && credentials.password) {
+                let mockUser: User
 
-                user.value = mockUser
-                token.value = mockToken
-
-                // Store in localStorage for persistence
-                if (credentials.remember) {
-                    localStorage.setItem('books_auth_token', mockToken)
-                    localStorage.setItem('books_auth_user', JSON.stringify(mockUser))
+                if (credentials.username === 'admin' && credentials.password === 'password') {
+                    mockUser = {
+                        id: 1,
+                        email: 'admin@books-library.local',
+                        name: 'Administrator',
+                        role: 'admin',
+                        created_at: new Date().toISOString(),
+                        updated_at: new Date().toISOString()
+                    }
                 } else {
-                    sessionStorage.setItem('books_auth_token', mockToken)
-                    sessionStorage.setItem('books_auth_user', JSON.stringify(mockUser))
+                    // Create a regular user for any other valid credentials
+                    mockUser = {
+                        id: 2,
+                        email: `${credentials.username}@books-library.local`,
+                        name: credentials.username.charAt(0).toUpperCase() + credentials.username.slice(1),
+                        role: 'user',
+                        created_at: new Date().toISOString(),
+                        updated_at: new Date().toISOString()
+                    }
                 }
-            } else if (credentials.email === 'user@example.com' && credentials.password === 'password') {
-                const mockUser: User = {
-                    id: 2,
-                    email: credentials.email,
-                    name: 'Regular User',
-                    role: 'user',
-                    created_at: new Date().toISOString(),
-                    updated_at: new Date().toISOString()
-                }
+
                 const mockToken = 'mock-jwt-token-' + Date.now()
 
                 user.value = mockUser
@@ -72,7 +66,7 @@ export const useAuthStore = defineStore('auth', () => {
                     sessionStorage.setItem('books_auth_user', JSON.stringify(mockUser))
                 }
             } else {
-                throw new Error('Invalid email or password')
+                throw new Error('Invalid username or password')
             }
         } catch (err) {
             error.value = err instanceof Error ? err.message : 'Login failed'

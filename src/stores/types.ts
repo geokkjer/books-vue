@@ -3,8 +3,8 @@
 
 export interface User {
     id: number
-    email: string
-    name: string
+    email: string // Auto-generated as username@books-library.local for self-hosted setup
+    name: string // Display name, defaults to capitalized username
     role: 'admin' | 'user'
     created_at: string
     updated_at: string
@@ -134,7 +134,7 @@ export interface PaginatedResponse<T> {
 
 // Form and Validation Types
 export interface LoginForm {
-    email: string
+    username: string
     password: string
     remember: boolean
 }
