@@ -298,6 +298,30 @@ A simple, self-hostable fullstack library web application for **private/family u
 - **Cypress** or **Playwright** (E2E testing)
 - **TypeScript** (type safety) - Static type checking
 
+### Gleam Development Best Practices
+
+### Gleam Development Standards
+
+**⚠️ CRITICAL**: Always reference `GLEAM_DEVELOPMENT_REFERENCE.md` for the latest Gleam patterns and APIs. Gleam evolves rapidly and many online tutorials are outdated.
+
+**⚠️ CRITICAL**: Always use `gleam add <package>` for adding dependencies instead of manually editing `gleam.toml`. This ensures:
+
+- Proper version resolution and compatibility
+- Automatic dependency conflict detection
+- Consistent builds across different environments
+- Prevents version mismatch errors
+
+Example:
+
+```bash
+# ✅ Correct way
+gleam add wisp
+gleam add gleam_json
+
+# ❌ Avoid manual editing
+# Don't manually edit gleam.toml dependencies
+```
+
 ## User Experience & Design
 
 ### Responsive Design
