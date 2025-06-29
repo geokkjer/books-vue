@@ -256,11 +256,21 @@
   - [x] **Runtime**: Erlang VM (BEAM) for fault-tolerance and concurrency
   - [x] **Integration**: Comprehensive Gleam-Vue integration research completed
 
+- [x] **Development Environment Setup** ✅
+  - [x] Create Nix flake for reproducible development environment
+  - [x] Set up direnv with .envrc for automatic environment loading
+  - [x] Configure minimal toolset: Gleam, Erlang, Node.js, SQLite
+  - [x] Add development scripts and environment variables
+  - [x] Test environment reproducibility and tool availability
+  - [x] Document environment setup and usage
+
 - [ ] **Gleam Project Setup**
   - [ ] Initialize Gleam project with Mist web framework
   - [ ] Configure gleam.toml with required dependencies (mist, gleam_sql, gleam_json)
   - [ ] Set up development and production build environments
   - [ ] Create proper Gleam project structure (handlers, models, database, middleware)
+  - [ ] Research and implement TDD with Gleam (max 7 tests)
+  - [ ] Set up test runner and basic functionality tests
 
 - [ ] **Database Configuration with gleam_sql**
   - [ ] Set up SQLite database connection using gleam_sql

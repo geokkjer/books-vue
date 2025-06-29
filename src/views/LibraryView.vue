@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, onMounted } from 'vue'
-import { useLibraryStore, useUIStore } from '@/stores'
+import { useRouter } from 'vue-router'
+import { useLibraryStore, useUIStore, useAuthStore } from '@/stores'
 import {
     UiCard,
     UiCardHeader,
@@ -14,11 +15,13 @@ import {
     UiDropdownMenuItem,
     UiDropdownMenuSeparator,
 } from '@/components/ui'
-import { MoreHorizontal, Search, Plus } from 'lucide-vue-next'
+import { MoreHorizontal, Search, Plus, User } from 'lucide-vue-next'
 
 // Stores
+const router = useRouter()
 const libraryStore = useLibraryStore()
 const uiStore = useUIStore()
+const authStore = useAuthStore()
 
 // Computed properties from stores
 const books = computed(() => libraryStore.paginatedBooks)
@@ -30,6 +33,7 @@ const searchQuery = computed({
 const totalBooks = computed(() => libraryStore.books.length)
 const currentPage = computed(() => libraryStore.currentPage)
 const totalPages = computed(() => libraryStore.totalPages)
+const currentUser = computed(() => authStore.user)
 
 // Load books when component mounts
 onMounted(async () => {
@@ -103,6 +107,10 @@ function prevPage() {
         libraryStore.setPage(currentPage.value - 1)
     }
 }
+
+function goToSettings() {
+    router.push('/settings')
+}
 </script>
 
 <template>
@@ -113,9 +121,9 @@ function prevPage() {
                 <h1 class="text-3xl font-bold tracking-tight">My Library</h1>
                 <p class="text-muted-foreground">Manage your personal book collection</p>
             </div>
-            <UiButton @click="handleAddBook" class="md:w-auto">
-                <Plus class="w-4 h-4" />
-                Add Book
+            <UiButton @click="goToSettings" variant="outline" class="md:w-auto">
+                <User class="w-4 h-4" />
+                {{ currentUser?.name || 'User' }}
             </UiButton>
         </div>
 
@@ -125,8 +133,14 @@ function prevPage() {
                 <Search class="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                 <UiInput v-model="searchQuery" placeholder="Search books..." class="pl-10" />
             </div>
-            <div class="text-sm text-muted-foreground">
-                {{ books.length }} books ({{ totalBooks }} total)
+            <div class="flex items-center gap-4">
+                <div class="text-sm text-muted-foreground">
+                    {{ books.length }} books ({{ totalBooks }} total)
+                </div>
+                <UiButton @click="handleAddBook" size="sm">
+                    <Plus class="w-4 h-4" />
+                    Add Book
+                </UiButton>
             </div>
         </div>
 
