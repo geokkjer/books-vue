@@ -4,7 +4,8 @@
 
 ## Core Language Changes & Modern Patterns
 
-### 1. **Package Dependencies** 
+### 1. **Package Dependencies**
+
 **⚠️ CRITICAL**: Always use `gleam add <package>` instead of manually editing `gleam.toml`:
 
 ```bash
@@ -17,6 +18,7 @@ gleam add sqlight
 ```
 
 ### 2. **Modern Use Expression Syntax**
+
 ```gleam
 // ✅ Modern pattern (no variable binding in use)
 pub fn handle_request(req: wisp.Request) -> wisp.Response {
@@ -29,6 +31,7 @@ pub fn handle_request(req: wisp.Request) -> wisp.Response {
 ```
 
 ### 3. **HTTP Methods and Imports**
+
 ```gleam
 import gleam/http  // Use gleam/http for HTTP methods
 import wisp
@@ -43,6 +46,7 @@ pub fn handle_method(req: wisp.Request) -> wisp.Response {
 ```
 
 ### 4. **String Tree for Responses**
+
 All Wisp responses now require `string_tree.StringTree`:
 
 ```gleam
@@ -69,6 +73,7 @@ fn html_response() -> wisp.Response {
 ## Wisp Web Framework - Latest Patterns
 
 ### 1. **Modern Server Setup with Mist**
+
 ```gleam
 import wisp
 import wisp/wisp_mist
@@ -91,6 +96,7 @@ pub fn main() {
 ```
 
 ### 2. **Request Routing Patterns**
+
 ```gleam
 pub fn handle_request(req: wisp.Request) -> wisp.Response {
   use <- wisp.log_request(req)
@@ -106,6 +112,7 @@ pub fn handle_request(req: wisp.Request) -> wisp.Response {
 ```
 
 ### 3. **JSON Handling**
+
 ```gleam
 import gleam/json
 import gleam/dynamic/decode
@@ -134,6 +141,7 @@ pub fn create_book(req: wisp.Request) -> wisp.Response {
 ```
 
 ### 4. **Error Handling & Responses**
+
 ```gleam
 // Standard response patterns
 pub fn not_found() -> wisp.Response {
@@ -160,6 +168,7 @@ pub fn error_response(message: String, code: Int) -> wisp.Response {
 ## Database Integration with SQLight
 
 ### 1. **Modern Connection Setup**
+
 ```gleam
 import sqlight
 
@@ -187,6 +196,7 @@ pub fn setup_database() -> Context {
 ```
 
 ### 2. **Database Queries**
+
 ```gleam
 import sqlight
 
@@ -219,6 +229,7 @@ pub fn book_decoder(row: sqlight.Row) -> Book {
 ## Testing Patterns
 
 ### 1. **Basic Test Structure**
+
 ```gleam
 import gleeunit
 import gleeunit/should
@@ -250,6 +261,7 @@ pub fn http_endpoint_test() {
 ```
 
 ### 2. **Testing with Assertions**
+
 ```gleam
 pub fn validation_test() {
   // Modern assertion syntax
@@ -262,6 +274,7 @@ pub fn validation_test() {
 ## Pattern Matching & Types
 
 ### 1. **Modern Pattern Matching**
+
 ```gleam
 // Using shorthand labels
 pub fn process_result(result: Result(Book, String)) {
@@ -283,6 +296,7 @@ pub fn update_book_status(book: Book, new_status: String) -> Book {
 ```
 
 ### 2. **Using `use` for Clean Error Handling**
+
 ```gleam
 pub fn create_book_handler(req: wisp.Request, ctx: Context) -> wisp.Response {
   use json <- wisp.require_json(req)
@@ -316,6 +330,7 @@ gleeunit = ">= 1.0.0 and < 2.0.0"       # Testing framework
 ## Environment & Development
 
 ### 1. **Project Structure**
+
 ```
 project/
 ├── src/
@@ -336,6 +351,7 @@ project/
 ```
 
 ### 2. **Development Commands**
+
 ```bash
 # Project setup
 gleam new my_project
@@ -360,6 +376,7 @@ gleam run -m app/server  # Run specific module
 ## Debugging & Development Tools
 
 ### 1. **Echo for Debug Printing** (New in 2025)
+
 ```gleam
 pub fn debug_pipeline() {
   [1, 2, 3]
@@ -371,6 +388,7 @@ pub fn debug_pipeline() {
 ```
 
 ### 2. **Modern Error Messages**
+
 Gleam now provides much better error messages. Common patterns:
 
 ```gleam
